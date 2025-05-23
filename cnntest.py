@@ -122,7 +122,7 @@ with torch.no_grad():
     print(f"accuracy of the network : {acc}%")
 
     for i in range(10):
-        acc = 100.0 * n_class_correct / n_class_samples
+        acc = 100.0 * n_class_correct[i] / n_class_samples[i]
         print(f"accuracy of {classes[i]} : {acc}%")
 
 
