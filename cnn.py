@@ -44,8 +44,8 @@ def imshow(img):
     plt.show()
 
 
-detaiter = iter(train_dataloader)
-images, labels = detaiter.next()
+dataiter = iter(train_dataloader)
+images, labels = next(dataiter) 
 
 imshow(torchvision.utils.make_grid(images))
 
