@@ -19,6 +19,7 @@ import yaml
 import os
 
 
+
 #parsing
 parser = argparse.ArgumentParser()
 
@@ -33,24 +34,17 @@ parser.add_argument('--conv2_out', type=int, default=None)
 parser.add_argument('--dropout', type=float, default=None)
 args = parser.parse_args()
 
-# read config file
+# Load config from YAML
 if args.config is not None:
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
 else:
     config = {}
 
-def get_arg(key, default=None):
-    return getattr(args, key) if getattr(args, key) is not None else config.get(key, default)
-
-num_epoch = get_arg('num_epoch', 10)
-batch_size = get_arg('batch_size', 32)
-lr = get_arg('lr', 0.001)
-fc1_dim = get_arg('fc1_dim', 200)
-fc2_dim = get_arg('fc2_dim', 100)
-conv1_out = get_arg('conv1_out', 6)
-conv2_out = get_arg('conv2_out', 16)
-dropout = get_arg('dropout', 0.5)
+# 🧠 핵심: config 값으로 args 덮어쓰기
+for k, v in config.items():
+    if getattr(args, k) is None:
+        setattr(args, k, v)
 
 
 #check device
