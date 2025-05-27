@@ -171,13 +171,13 @@ with torch.no_grad():
         n_correct += (predicted == labels).sum().item()
 
         for i in range(labels.shape[0]):
-            label = labels[i]
-            pred = predicted[i]   
+            label = labels[i].item()
+            pred = predicted[i].item()   
 
             if label == pred :
-                n_class_correct[i] += 1
+                n_class_correct[label] += 1
             
-            n_class_samples[i] += 1
+            n_class_samples[label] += 1
 
     acc = 100.0 * n_correct / n_samples    
     print(f"accuracy of the network : {acc:.2f}%")
