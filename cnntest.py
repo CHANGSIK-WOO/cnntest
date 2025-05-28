@@ -18,6 +18,7 @@ import argparse
 import yaml
 import os
 
+
 # function "load_config"
 def load_config(config_file):
     with open(config_file,"r") as f:
@@ -32,11 +33,14 @@ def override_args_from_config(args, cfg):
             if getattr(args, key) is None :
                 setattr(args, key, value)            
 
+
 #parser
 parser = argparse.ArgumentParser()
 
 #add argument in CLI (Command Line으로 입력 시 argument명)
-parser.add_argument('--config', type=str, required=True, default=None)
+parser.add_argument('--config', type=str, required=True, default=None, help="Path to config file (config.yaml)")
+parser.add_argument('--resume', type=str, default=None, help="Checkpoint path to resume from")
+
 parser.add_argument('--num_epoch', type=int, default=None)
 parser.add_argument('--batch_size', type=int, default=None)
 parser.add_argument('--lr', type=float, default=None)
@@ -46,12 +50,14 @@ parser.add_argument('--conv1_out', type=int, default=None)
 parser.add_argument('--conv2_out', type=int, default=None)
 parser.add_argument('--dropout', type=float, default=None)
 
+#default args
 #load config from config.yaml and override args in args.k = v
 args = parser.parse_args()
 if args.config:
     cfg = load_config(args.config)
     print(cfg)
     override_args_from_config(args, cfg)
+
 
 #check device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,6 +82,7 @@ test_dataloader = DataLoader(dataset = test_dataset, batch_size = args.batch_siz
 
 #CIFAR10 Classes
 classes = ("plane", "car", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck")
+
 
 #Model ConvNet
 class Convnet(nn.Module):
@@ -111,7 +118,6 @@ class Convnet(nn.Module):
         self.fc3 = nn.Linear(in_features = fc2_dim, out_features=10) # dim = 200 --> dim = 100
         # CrossEntropyLoss가 마지막에서 softmax(logits) 취급해서 raw score(logit) 그대로 주는 게 맞음. ReLU 쓰면 음수 점수 다 0돼서 정보 손실. Dropout도 마지막엔 잘 안 씀
          
-
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
@@ -121,6 +127,7 @@ class Convnet(nn.Module):
         x = self.fc3(x) # [batch, 10]. x의 각 원소가 바로 logits!
 
         return x
+
 
 #define model
 model = Convnet(
@@ -138,7 +145,46 @@ optimizer = optim.Adam(params = model.parameters(), lr = args.lr)
 #steps
 steps = len(train_dataloader)
 
-#train_net
+if args.resume:
+    checkpoint = torch.load(args.resume, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    model.eval()
+    print(f"Resume from {args.resume}")
+    with torch.no_grad():
+        n_correct = 0
+        n_samples = 0
+        n_class_correct = [0 for i in range(10)]
+        n_class_samples = [0 for i in range(10)]
+
+        for images, labels in test_dataloader:
+            images = images.to(device)
+            labels = labels.to(device)
+            output = model(images) # [bs, 10]
+
+            _, predicted = torch.max(output, dim=-1) # [max_value, max_index]
+            n_samples += labels.shape[0] # batch_size summation
+            n_correct += (predicted == labels).sum().item()
+
+            for i in range(labels.shape[0]):
+                label = labels[i].item()
+                pred = predicted[i].item()   
+
+                if label == pred :
+                    n_class_correct[label] += 1
+            
+                n_class_samples[label] += 1
+
+        acc = 100.0 * n_correct / n_samples    
+        print(f"accuracy of the network : {acc:.2f}%")
+
+        for i in range(10):
+            acc = 100.0 * n_class_correct[i] / n_class_samples[i]
+            print(f"accuracy of {classes[i]} : {acc:.2f}%")
+
+    exit(0) # resume 후 바로 exit
+    
+#train
 for epoch in range(args.num_epoch):
 
     model.train()
@@ -158,6 +204,20 @@ for epoch in range(args.num_epoch):
             print(f"Epochs : {epoch} / {args.num_epoch}, Steps : [{i+1} / {steps}], loss : {loss.item():.4f}")
 
 print("Finish Training Model")
+
+
+#save model
+config_name = os.path.splittext(os.path.basename(args.config))[0] #config1
+save_dir = "checkpoints"
+os.makedirs(save_dir, exist_ok=True)
+save_path = os.path.join(save_dir, f"{config_name}_checkpoint.pth")
+torch.save({
+    "model_state_dict" : model.state_dict(),
+    "optimizer_state_dict" : optimizer.state_dict(),
+    "args" : vars(args)
+})
+print(f"Finish Saving Model to {save_path}")
+
 
 #test
 model.eval()
