@@ -1,8 +1,11 @@
-num_epoch: 10
-batch_size: 32
-lr: 0.001
-conv1_out: 6
-conv2_out: 16
-fc1_dim: 200
-fc2_dim: 100
-dropout: 0.5
+train:
+  num_epoch: 10
+  batch_size: 32
+  lr: 0.001
+
+model:
+  conv1_out: 6
+  conv2_out: 16
+  fc1_dim: 200
+  fc2_dim: 100
+  dropout: 0.5

@@ -18,12 +18,25 @@ import argparse
 import yaml
 import os
 
+# function "load_config"
+def load_config(config_file):
+    with open(config_file,"r") as f:
+        config = yaml.safe_load(f)
+    
+    return config
 
+# override args
+def override_args_from_config(args, cfg):
+    for section in cfg.values():
+        for key, value in section.items():
+            if getattr(args, key) is None :
+                setattr(args, key, value)            
 
-#parsing
+#parser
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--config', type=str, default=None)
+#add argument in CLI (Command Line으로 입력 시 argument명)
+parser.add_argument('--config', type=str, required=True, default=None)
 parser.add_argument('--num_epoch', type=int, default=None)
 parser.add_argument('--batch_size', type=int, default=None)
 parser.add_argument('--lr', type=float, default=None)
@@ -32,20 +45,13 @@ parser.add_argument('--fc2_dim', type=int, default=None)
 parser.add_argument('--conv1_out', type=int, default=None)
 parser.add_argument('--conv2_out', type=int, default=None)
 parser.add_argument('--dropout', type=float, default=None)
+
+#load config from config.yaml and override args in args.k = v
 args = parser.parse_args()
-
-# Load config from YAML
-if args.config is not None:
-    with open(args.config, 'r') as f:
-        config = yaml.safe_load(f)
-else:
-    config = {}
-
-# 🧠 핵심: config 값으로 args 덮어쓰기
-for k, v in config.items():
-    if getattr(args, k) is None:
-        setattr(args, k, v)
-
+if args.config:
+    cfg = load_config(args.config)
+    print(cfg)
+    override_args_from_config(args, cfg)
 
 #check device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
