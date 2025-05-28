@@ -207,7 +207,7 @@ print("Finish Training Model")
 
 
 #save model
-config_name = os.path.splittext(os.path.basename(args.config))[0] #config1
+config_name = os.path.splitext(os.path.basename(args.config))[0] #config1
 save_dir = "checkpoints"
 os.makedirs(save_dir, exist_ok=True)
 save_path = os.path.join(save_dir, f"{config_name}_checkpoint.pth")
