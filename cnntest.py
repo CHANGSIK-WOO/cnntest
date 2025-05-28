@@ -215,7 +215,7 @@ torch.save({
     "model_state_dict" : model.state_dict(),
     "optimizer_state_dict" : optimizer.state_dict(),
     "args" : vars(args)
-})
+}, save_path)
 print(f"Finish Saving Model to {save_path}")
 
 
